@@ -1,44 +1,41 @@
 <?php
 include 'auth.php';
 
-class Profile {
-    public $username;
-    public $isAdmin = false;
+// AMBIL DATA DARI SESSION YANG AMAN, BUKAN DARI COOKIE
+$isAdmin = isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
+$username = $_SESSION['user'] ?? 'Guest'; // Ambil username dari session
 
-    function __toString() {
-        return "User: {$this->username}, Role: " . ($this->isAdmin ? "Admin" : "User");
-    }
-}
-
-if (!isset($_COOKIE['profile'])) {
-    die("Profile cookie tidak ditemukan. Silakan login ulang.");
-}
-
-$profile = unserialize($_COOKIE['profile']); 
+$msg = ""; // Inisialisasi variabel pesan
 
 // jika admin, boleh hapus user lain
-if ($profile->isAdmin && isset($_POST['delete_user'])) {
+if ($isAdmin && isset($_POST['delete_user'])) {
     $target = $_POST['delete_user'];
+
+    // Perbaikan SQL Injection untuk operasi DELETE (sudah benar)
     $stmt = $GLOBALS['PDO']->prepare("DELETE FROM users WHERE username=?");
     $stmt->execute([$target]);
+
+    // Perbaikan XSS untuk pesan sukses (sudah benar)
     $msg = "<p style='color:green'>User <b>" . htmlspecialchars($target) . "</b> berhasil dihapus!</p>";
 }
 
 include '_header.php';
 ?>
 <h2>Profile Page</h2>
-<p><?php echo $profile; ?></p>
+<p>User: <?php echo htmlspecialchars($username); ?>, Role: <?php echo $isAdmin ? "Admin" : "User"; ?></p>
 
-<?php if ($profile->isAdmin): ?>
+<?php if ($isAdmin): ?>
   <h3>Admin Panel</h3>
   <form method="post">
     <label>Delete user:
       <select name="delete_user">
         <?php
+        // Menggunakan query yang aman untuk menampilkan daftar pengguna
         $users = $GLOBALS['PDO']->query("SELECT username FROM users");
         foreach ($users as $u) {
-            if ($u['username'] !== $profile->username) {
-                echo "<option value='{$u['username']}'>{$u['username']}</option>";
+            // Pastikan admin tidak bisa menghapus dirinya sendiri
+            if ($u['username'] !== $username) {
+                echo "<option value='" . htmlspecialchars($u['username']) . "'>" . htmlspecialchars($u['username']) . "</option>";
             }
         }
         ?>
