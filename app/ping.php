@@ -7,11 +7,13 @@ if (!isset($_GET['target'])) {
     die("Missing parameter.");
 }
     $target = $_GET['target'];
-    echo "<h3>Ping Result for: $target</h3>";
-    // $output = shell_exec("ping -c 2 " . $target);
+    // Perbaikan XSS: Gunakan htmlspecialchars saat menampilkan input
+    echo "<h3>Ping Result for: " . htmlspecialchars($target) . "</h3>";
+    
+    // Perbaikan Command Injection (sudah benar)
     $safe_target = escapeshellarg($target);
     $output = shell_exec("ping -c 2 " . $safe_target);
-    echo "<pre>$output</pre>";
+    echo "<pre>" . htmlspecialchars($output) . "</pre>";
 
 ?>
 <?php include '_footer.php'; ?>
