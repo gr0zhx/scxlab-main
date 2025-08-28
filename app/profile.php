@@ -19,8 +19,9 @@ $profile = unserialize($_COOKIE['profile']);
 // jika admin, boleh hapus user lain
 if ($profile->isAdmin && isset($_POST['delete_user'])) {
     $target = $_POST['delete_user'];
-    $GLOBALS['PDO']->exec("DELETE FROM users WHERE username='$target'");
-    $msg = "<p style='color:green'>User <b>$target</b> berhasil dihapus!</p>";
+    $stmt = $GLOBALS['PDO']->prepare("DELETE FROM users WHERE username=?");
+    $stmt->execute([$target]);
+    $msg = "<p style='color:green'>User <b>" . htmlspecialchars($target) . "</b> berhasil dihapus!</p>";
 }
 
 include '_header.php';
